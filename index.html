@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map Example</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Vendors styles-->
+    <link rel="stylesheet" href="vendors/simplebar/css/simplebar.css">
+    <!-- Main styles for this application-->
+    <link href="css/style.css" rel="stylesheet">
+    <style>
+        #map {
+            height: calc(100vh - 67px); /* Full screen height */
+            width: 100%;
+            margin: 0 auto;
+        }
+        
+        /* Button styles */
+        .map-button {
+            position: absolute;
+            top: 76px;
+            right: 20px;
+            z-index: 1000;
+            background-color: transparent;
+            color: black;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        /* Sidebar styles */
+        .sidebar {
+            height: calc(100vh - 65px);
+            width: 300px; /* Adjust width as needed */
+            position: fixed;
+            top: 64px;
+            right: -300px; /* Initially hidden off the screen */
+            background-color: white;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.5);
+            z-index: 999; /* Just below the button */
+            transition: right 0.3s ease; /* Smooth slide-in effect */
+            padding: 20px;
+        }
+
+        /* Show the sidebar */
+        .sidebar-open {
+            right: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="wrapper d-flex flex-column" >
+        <header class="header header-sticky p-0">
+            <div class="container-fluid px-4 border-bottom">
+                
+                <button class="header-toggler" id="sidebarToggleBtn" type="button" style="margin-inline-start: -14px">
+                  <svg class="icon icon-lg" id="sidebarToggleIcon">
+                      <use xlink:href="{% static 'vendors/@coreui/icons/svg/free.svg' %}#cil-menu"></use>
+                  </svg>
+                </button>
+                
+                <ul class="header-nav ms-auto ms-md-0">
+                    <li class="nav-item">
+                        <div class="chart-holder">
+                          <button class="btn btn-link nav-link" id="enableDragButton" onclick="enableDrag()" title="Organize" aria-expanded="false">
+                            <img src="https://cdn-icons-png.flaticon.com/512/10348/10348649.png" alt="Icon" style="width: 21px; height: 20px;">
+                          </button>
+                          
+                        </div>                  
+                    </li>
+                    <li class="nav-item">
+                      <button class="btn btn-link nav-link" type="button" aria-expanded="false" title="Delete" onclick='removeNode()' ${selectedNodeIds.length === 0 ? 'disabled' : ''}>
+                        <img src="https://cdn-icons-png.flaticon.com/512/1214/1214428.png" alt="Icon" style="width: 21px; height: 20px;">
+                      </button>
+                    </li>
+                    <li class="nav-item py-1">
+                      <div class="vr h-100 mx-2 text-body text-opacity-75"></div>
+                    </li>
+                    <li>
+                      <button onclick='chart.layout(["right","bottom","left","top"][index++%4]).render().fit()'
+                        class="btn btn-link nav-link" title="Swap">
+                        <img src="https://cdn-icons-png.flaticon.com/512/4361/4361396.png" alt="Icon" style="width: 21px; height: 20px;">
+                      </button>
+                    </li>
+                    <li>
+                      <button onclick="chart.compact(!!(compact++%2)).render().fit()"
+                        class="btn btn-link nav-link" title="Compact">
+                        <img src="https://cdn-icons-png.flaticon.com/512/854/854125.png" alt="Icon" style="width: 21px; height: 20px;">
+                      </button>
+                    </li>
+                    <li>
+                      <button onclick="chart.fit()"
+                        class="btn btn-link nav-link" title="Screen Fit">
+                        <img src="https://cdn-icons-png.flaticon.com/512/16126/16126638.png" alt="Icon" style="width: 21px; height: 20px;">
+                      </button>
+                    </li>
+                    
+                    <li class="nav-item py-1">
+                      <div class="vr h-100 mx-2 text-body text-opacity-75"></div>
+                    </li>
+                    <li>
+                      <button onclick="chart.exportImg({full:true})" class="btn btn-link nav-link" title="Download Image">
+                        <img src="https://cdn-icons-png.flaticon.com/512/7245/7245427.png" alt="Icon" style="width: 21px; height: 20px;">
+                      </button>
+                    </li>
+                    <li>
+                      <button onclick="chart.exportSvg()" class="btn btn-link nav-link" title="Download SVG">
+                         <img src="https://cdn-icons-png.flaticon.com/512/12223/12223791.png" alt="Icon" style="width: 21px; height: 20px;">
+                      </button>
+                    </li>
+                    
+                    
+                    
+                    
+                    
+                </ul>
+                <!--Profile-->
+
+                <ul class="header-nav ms-auto ms-md-0">
+                  <li class="nav-item dropdown" ><a class="nav-link py-0" draggable="false" data-coreui-toggle="dropdown" href="#" role="button" aria-haspopup="true">
+                      <div class="avatar avatar-md"><img class="avatar-img" draggable="false" src="assets/img/avatars/8.jpg" alt="user@email.com"></div>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end pt-0">
+                      <div class="dropdown-header bg-body-tertiary text-body-secondary fw-semibold rounded-top mb-2"  data-coreui-i18n="account">Account</div><a class="dropdown-item" href="#" draggable="false">
+                        <svg class="icon me-2">
+                          <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-bell"></use>
+                        </svg><span data-coreui-i18n="updates" draggable="false">Updates</span><span class="badge badge-sm bg-info-gradient ms-2">42</span></a><a class="dropdown-item" href="#" >
+                        <svg class="icon me-2">
+                          <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-envelope-open"></use>
+                        </svg><span data-coreui-i18n="messages">Messages</span><span class="badge badge-sm badge-sm bg-success ms-2">42</span></a><a class="dropdown-item" href="#">
+                        <svg class="icon me-2">
+                          <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-task"></use>
+                        </svg><span data-coreui-i18n="tasks">Tasks</span><span class="badge badge-sm bg-danger-gradient ms-2">42</span></a><a class="dropdown-item" href="#">
+                        <svg class="icon me-2">
+                          <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-comment-square"></use>
+                        </svg><span data-coreui-i18n="comments">Comments</span><span class="badge badge-sm bg-warning-gradient ms-2">42</span></a>
+                      <div class="dropdown-header bg-body-tertiary text-body-secondary fw-semibold my-2" data-coreui-i18n="settings">Settings</div><a class="dropdown-item" href="#" draggable="false">
+                        <svg class="icon me-2">
+                          <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-user"></use>
+                        </svg><span data-coreui-i18n="profile">Profile</span></a><a class="dropdown-item" href="#">
+                        <svg class="icon me-2">
+                          <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-settings"></use>
+                        </svg><span data-coreui-i18n="settings">Settings</span></a><a class="dropdown-item" href="#">
+                        <svg class="icon me-2">
+                          <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-credit-card"></use>
+                        </svg><span data-coreui-i18n="payments">Payments</span><span class="badge badge-sm bg-secondary-gradient text-dark ms-2">42</span></a><a class="dropdown-item" href="#">
+                        <svg class="icon me-2">
+                          <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-file"></use>
+                        </svg><span data-coreui-i18n="projects">Projects</span><span class="badge badge-sm bg-primary-gradient ms-2">42</span></a>
+                      <div class="dropdown-divider"></div><a class="dropdown-item" href="#" draggable="false">
+                        <svg class="icon me-2">
+                          <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-lock-locked"></use>
+                        </svg><span data-coreui-i18n="lockAccount">Lock Account</span></a><a class="dropdown-item" href="#">
+                        <svg class="icon me-2">
+                          <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-account-logout"></use>
+                        </svg><span data-coreui-i18n="logout">Logout</span></a>
+                    </div>
+                  </li>
+                </ul>
+                
+            </div>
+        </header>
+        
+    </div>
+
+
+    <div id="map"></div>
+
+    <!-- Button to open sidebar -->
+    <button class="btn btn-primary map-button" id="toggleSidebarBtn">Toggle Sidebar</button>
+
+    <!-- Sidebar content -->
+    <div class="sidebar" id="sidebar">
+        <h4>Sidebar Content</h4>
+        <p>This is the content inside the sidebar. You can add any HTML content here.</p>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <!-- CoreUI and necessary plugins-->
+    <script src="vendors/@coreui/coreui-pro/js/coreui.bundle.min.js"></script>
+    <script src="vendors/simplebar/js/simplebar.min.js"></script>
+    <script>
+        // Initialize the map and set its view to the chosen geographical coordinates and zoom level
+        var map = L.map('map').setView([51.505, -0.09], 17); // Coordinates for London with a zoom level of 13
+
+        // Add the OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Optionally, add a marker to the map
+        var marker = L.marker([51.5, -0.09]).addTo(map)
+            .bindPopup('A marker in London.')
+            .openPopup();
+
+        // Toggle sidebar visibility
+        document.getElementById('toggleSidebarBtn').addEventListener('click', function() {
+            var sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('sidebar-open');
+        });
+    </script>
+</body>
+</html>
